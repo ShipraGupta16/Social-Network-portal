@@ -1,0 +1,89 @@
+{% extends 'network/layout.html' %}
+{% load is_following %}
+
+{% block body %}
+
+    <div class="row mb-3 mt-3">
+        <div class="col-md-12">
+            <div class="d-flex flex-row border rounded">
+                <div class="pl-3 pt-2 pr-2 pb-2 w-75 border-left">
+                    <h4 class="text-primary">{{ user.username }}</h4>
+                    Followers: {{ user.followers.count }}
+                    Following: {{ user.following_set.count }}
+                    <p>
+                        {% if request.user.is_authenticated and user.id == request.user.id %}
+                            <a href="#" class="btn btn-success" disabled>Follow</a>
+                        {% else %}
+                            {% if request.user.is_authenticated %}
+                                {% is_following user as following %}
+                                {% if not following %}
+                                    <a href="{% url 'follow' user.id %}" class="btn btn-success">Follow</a>
+                                {% else %}
+                                    <a href="{% url 'unfollow' user.id %}" class="btn btn-danger">Un-follow</a>
+                                {% endif %}
+                            {% else %}
+                                <p>Please login to follow</p>
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <h4 class="mt-4">Posts by the user</h4>
+            {% for post in posts %}
+                <div class="card">
+                    <div class="card-body">
+                        <h4>{{ post.user.username }}</h4>
+                        {% if post.user.id == request.user.id %}
+                            <a href="javascript:void(0)" class="edit">Edit</a>
+                            <div class="edit-post-div hidden">
+                                <form action="{% url 'add-post' %}" method="post">
+                                    {% csrf_token %}
+                                    <div class="form-group">
+                                        <label for="edit-content">Edit Post:</label>
+                                        <textarea class="form-control" required name="content"
+                                                  placeholder="Write text.."
+                                                  id="edit-content">{{ post.content }}</textarea>
+                                    </div>
+                                    <button type="button" data-id="{{ post.id }}" class="btn btn-primary update-post">
+                                        Save
+                                    </button>
+                                </form>
+                            </div>
+                        {% endif %}
+                        <div class="post">
+                            <p id="post-content">{{ post.content }}</p>
+                            <p>{{ post.created_at }}</p>
+                        </div>
+                        <i class="fa fa-heart like" data-id="{{ post.id }}"
+                           style="cursor: pointer"> {{ post.like_set.count }}</i>
+                    </div>
+                </div>
+            {% endfor %}
+
+            {% if posts.has_other_pages %}
+                <nav aria-label="Page navigation conatiner" style="margin-top: 20px"></nav>
+                <ul class="pagination justify-content-center">
+                    {% if posts.has_previous %}
+                        <li class="page-link"><a href="?page={{ posts.previous_page_number }}">&laquo;</a></li>
+                    {% else %}
+                        <li class="disabled page-link"><span>&laquo;</span></li>
+                    {% endif %}
+                    {% for i in posts.paginator.page_range %}
+                        {% if posts.number == i %}
+                            <li class="active page-link"><span>{{ i }} <span class="sr-only">(current)</span></span>
+                            </li>
+                        {% else %}
+                            <li class="page-link"><a href="?page={{ i }}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if posts.has_next %}
+                        <li class="page-link"><a href="?page={{ posts.next_page_number }}">&raquo;</a></li>
+                    {% else %}
+                        <li class="disabled page-link"><span>&raquo;</span></li>
+                    {% endif %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+
+{% endblock %}
